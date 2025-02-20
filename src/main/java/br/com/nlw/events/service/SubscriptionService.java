@@ -40,7 +40,7 @@ public class SubscriptionService {
 
         User userSubscriber = userRepository.findByEmail(user.getEmail());
         if(userSubscriber == null) {
-            userRepository.save(userSubscriber);
+            userSubscriber = userRepository.save(user);
         }
 
         newSubscription.setSubscriber(userSubscriber);
@@ -52,10 +52,14 @@ public class SubscriptionService {
             newSubscription.setIndication(indicador);
         }
 
-        //Checa se o usuário já está cadastrado para aquela evento
-        Optional.of(subscriptionRepository.findByEventAndSubscriber(eventData, userSubscriber)).ifPresent(sub -> {
-            throw new SubscriptionConflictException("Já existe incrição para o usuário " + userSubscriber.getName() + " no evento " + eventData.getTitle());
-        });
+        Optional<Subscription> existingSubscription = Optional.ofNullable(
+            subscriptionRepository.findByEventAndSubscriber(eventData, userSubscriber)
+        );
+        
+        if (existingSubscription.isPresent()) {
+            throw new SubscriptionConflictException("Já existe inscrição para o usuário " 
+                + userSubscriber.getName() + " no evento " + eventData.getTitle());
+        }
 
         subscriptionRepository.save(newSubscription);
 
