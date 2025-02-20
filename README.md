@@ -18,4 +18,7 @@ Seguindo para seu repository, service e controller onde foi necessário o tratam
 
 BÔNUS: Nessa aula algumas exceções foram tratadas da forma tradicional (if), porém, pensei em trata-las utilizando o Optional e .orElseThrow com objetivo de estudar novas formas e deixar o código mais legível :)
 
-
+## 💻 Aula 03 - Implementando o Ranking de Indicações
+Nessa aula foi implementada a esturura respository, service e controller do ranking das indicações.
+Foi necessário a criação de uma query nativa para filtrar as informações desejadas do banco de dados e utilizar uma estrutura com funções como stream e filter para retornar filtrar retornar corretamente os dados.
+Finalizado o projeto pelo backend de Java com desafio de criar o front.
