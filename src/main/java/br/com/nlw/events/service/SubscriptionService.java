@@ -1,12 +1,16 @@
 package br.com.nlw.events.service;
 
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import br.com.nlw.events.DTO.SubscriptionResponse;
+import br.com.nlw.events.DTO.SubscriptionRankingByUserDTO;
+import br.com.nlw.events.DTO.SubscriptionRankingDTO;
+import br.com.nlw.events.DTO.SubscriptionResponseDTO;
 import br.com.nlw.events.exception.EventNotFoundException;
 import br.com.nlw.events.exception.SubscriptionConflictException;
 import br.com.nlw.events.exception.UserIndicadorNotFoundException;
@@ -29,7 +33,7 @@ public class SubscriptionService {
     @Autowired
     private EventRepository eventRepository;
 
-    public SubscriptionResponse createNewSubscription(String eventName, User user, Integer indicadorId) {
+    public SubscriptionResponseDTO createNewSubscription(String eventName, User user, Integer indicadorId) {
         Subscription newSubscription = new Subscription();
 
         Event eventData = Optional.ofNullable(eventRepository.findByPrettyName(eventName)).orElseThrow(() -> {
@@ -64,7 +68,32 @@ public class SubscriptionService {
         subscriptionRepository.save(newSubscription);
 
         //retorna o DTO da subscription apenas com as informações necessárias
-        return new SubscriptionResponse(newSubscription.getSubscriptionNumber(), "http://codecraft.com/subscription/"+newSubscription.getEvent().getPrettyName()+"/"+newSubscription.getSubscriber().getId());
+        return new SubscriptionResponseDTO(newSubscription.getSubscriptionNumber(), "http://codecraft.com/subscription/"+newSubscription.getEvent().getPrettyName()+"/"+newSubscription.getSubscriber().getId());
+    }
+
+
+    public List<SubscriptionRankingDTO> getCompleteRanking(String prettyEventName) {
+        Event existingEvent = Optional.ofNullable(eventRepository.findByPrettyName(prettyEventName)).orElseThrow(() -> {
+            throw new EventNotFoundException("O ranking do evento" + prettyEventName + "não existe");
+        });        
+
+        return subscriptionRepository.generateRanking(existingEvent.getEventId());
+    }
+
+    public SubscriptionRankingByUserDTO getCompleteRankingByUser(String prettyEventName, Integer userId) {
+        List<SubscriptionRankingDTO> ranking = getCompleteRanking(prettyEventName);
+
+        SubscriptionRankingDTO item = ranking.stream().filter(i -> i.userId().equals(userId)).findFirst().orElse(null);
+        if(item == null) {
+            throw new UserIndicadorNotFoundException("Não há inscrições para este usuário");
+        }
+
+        Integer posicao = IntStream.range(0, ranking.size())
+                          .filter(pos -> ranking.get(pos).userId().equals(userId))
+                          .findFirst().getAsInt();
+
+        return new SubscriptionRankingByUserDTO(item, posicao+1);
+ 
     }
     
 }

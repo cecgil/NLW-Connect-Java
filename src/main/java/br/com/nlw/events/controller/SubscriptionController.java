@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.nlw.events.DTO.ErrorMessage;
-import br.com.nlw.events.DTO.SubscriptionResponse;
+import br.com.nlw.events.DTO.SubscriptionResponseDTO;
 import br.com.nlw.events.exception.EventNotFoundException;
 import br.com.nlw.events.exception.SubscriptionConflictException;
 import br.com.nlw.events.exception.UserIndicadorNotFoundException;
@@ -15,6 +15,8 @@ import br.com.nlw.events.service.SubscriptionService;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.GetMapping;
+
 
 
 @RestController
@@ -24,10 +26,10 @@ public class SubscriptionController {
     private SubscriptionService subscriptionService;
 
 
-    @PostMapping("/subscription/{prettyName}")
-    public ResponseEntity<Object> createNewSubscription(@PathVariable String prettyName, @RequestBody User user, Integer indicadorId) {
+    @PostMapping({"/subscription/{prettyName}", "/subscription/{prettyName}/{userId}"})
+    public ResponseEntity<Object> createNewSubscription(@PathVariable String prettyName, @RequestBody User user,  @PathVariable(required = false)  Integer indicadorId) {
         try {
-            SubscriptionResponse result = subscriptionService.createNewSubscription(prettyName, user, indicadorId);
+            SubscriptionResponseDTO result = subscriptionService.createNewSubscription(prettyName, user, indicadorId);
             if(result != null) {
                 return ResponseEntity.ok(result);
             }
@@ -45,6 +47,28 @@ public class SubscriptionController {
         return ResponseEntity.badRequest().build();
         
     }
+
+
+    @GetMapping("/subscription/{prettyName}/ranking")
+    public ResponseEntity<?> generateRankingByEvent(@PathVariable String prettyName) {
+        try {
+            return ResponseEntity.ok().body(subscriptionService.getCompleteRanking(prettyName).stream().limit(3).toList());
+        } catch(EventNotFoundException e ) {
+            return ResponseEntity.status(404).body(new ErrorMessage(e.getMessage()));
+        }
+    }
+
+
+    @GetMapping("/subscription/{prettyName}/ranking/{userId}")
+    public ResponseEntity<?> generateRaningByEventAndUser(@PathVariable String prettyName, @PathVariable Integer userId){
+        try{
+            return ResponseEntity.ok(subscriptionService.getCompleteRankingByUser(prettyName, userId));
+        }catch(Exception ex){
+            return ResponseEntity.status(404).body(new ErrorMessage(ex.getMessage()));
+        }
+    } 
+    
+    
     
     
 }
